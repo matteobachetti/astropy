@@ -180,9 +180,12 @@ def interpret_err_lines(err_specs, ncols, input_colnames=None):
 
     Examples
     --------
+    >>> col_in = ['MJD', 'Rate']
+    >>> cols = interpret_err_lines(None, 2, input_colnames=col_in)
+    >>> cols[0]
+    'MJD'
     >>> err_specs = {'terr': [1], 'serr': [2]}
     >>> ncols = 5
-    >>> col_in = ['MJD', 'Rate']
     >>> cols = interpret_err_lines(err_specs, ncols, input_colnames=col_in)
     >>> cols[0]
     'MJD'
