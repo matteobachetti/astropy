@@ -1,6 +1,7 @@
 import copy
 from itertools import groupby
 import numpy as np
+import warnings
 from astropy.table import Table
 from astropy.io import registry as io_registry
 
@@ -262,8 +263,12 @@ def get_tables_from_qdp_file(qdp_file, input_colnames=None):
     table_list = []
     initial_comments = ""
     comment_text = ""
-    colnames = None
     err_specs = {}
+    colnames = None
+    if input_colnames is None or len(input_colnames) == ncol:
+        colnames = interpret_err_lines(
+            err_specs, ncol, input_colnames=input_colnames
+        )
 
     for key, group in groupby(contents):
         n_lines = len(list(group))

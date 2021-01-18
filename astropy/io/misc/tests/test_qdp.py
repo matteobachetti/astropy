@@ -1,5 +1,7 @@
 import numpy as np
+import pytest
 from astropy.io.misc.qdp import read_table_qdp, write_table_qdp
+from astropy.table import Table, Column
 
 
 def test_get_tables_from_qdp_file():
@@ -80,3 +82,21 @@ def test_roundtrip():
 
     for meta_name in ['initial_comments', 'comments']:
         assert meta_name in new_table.meta
+
+
+def test_read_write_simple(tmpdir):
+    test_file = str(tmpdir.join('test.qdp'))
+    t1 = Table()
+    t1.add_column(Column(name='a', data=[1, 2, 3]))
+    t1.write(test_file, format='qdp')
+    t2 = Table.read(test_file, table_id=0, format='qdp')
+    assert np.all(t2['col1'] == t1['a'])
+
+
+def test_read_write_simple_specify_name(tmpdir):
+    test_file = str(tmpdir.join('test.qdp'))
+    t1 = Table()
+    t1.add_column(Column(name='a', data=[1, 2, 3]))
+    t1.write(test_file, format='qdp')
+    t2 = Table.read(test_file, table_id=0, format='qdp', input_colnames=['a'])
+    assert np.all(t2['a'] == t1['a'])
