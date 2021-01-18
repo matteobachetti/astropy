@@ -6,6 +6,12 @@ from astropy.table import Table
 from astropy.io import registry as io_registry
 
 
+def is_qdp(origin, filepath, fileobj, *args, **kwargs):
+    if filepath is not None:
+        return filepath.endswith(('.qdp'))
+    return False
+
+
 def line_type(line):
     """Interpret a QDP file line
 
@@ -430,3 +436,4 @@ def write_table_qdp(table, filename, err_specs=None):
 def register_qdp():
     io_registry.register_reader('qdp', Table, read_table_qdp)
     io_registry.register_writer('qdp', Table, write_table_qdp)
+    io_registry.register_identifier('qdp', Table, is_qdp)
