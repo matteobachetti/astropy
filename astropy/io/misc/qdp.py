@@ -71,7 +71,7 @@ def line_type(line):
     try:
         float(probe)
         return f"data,{n}"
-    except:
+    except ValueError:
         pass
 
     raise ValueError(f"Unrecognized QDP line: {line}")
