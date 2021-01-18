@@ -1,7 +1,5 @@
-import sys
 import copy
 from itertools import groupby
-from astropy.timeseries import LombScargle
 import numpy as np
 from astropy.table import Table
 from astropy.io import registry as io_registry
