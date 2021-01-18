@@ -52,6 +52,8 @@ astropy.io.fits
 astropy.io.misc
 ^^^^^^^^^^^^^^^
 
+- Added QDP data file handling [#11256]
+
 astropy.io.votable
 ^^^^^^^^^^^^^^^^^^
 
