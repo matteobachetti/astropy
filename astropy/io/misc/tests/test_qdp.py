@@ -63,6 +63,8 @@ def test_roundtrip():
     !MJD            Err (pos)       Err(neg)        Rate            Error
     53000.123456 2.37847222222222e-05    -2.37847222222222e-05   -0.292553       -0.374935
     55045.099887 1.14467592592593e-05    -1.14467592592593e-05   0.000000        NO
+    ! Add command, just to raise the warning.
+    READ TERR 1
     ! WT -- whatever
     !MJD            Err (pos)       Err(neg)        Rate            Error
     53000.123456 2.37847222222222e-05    -2.37847222222222e-05   -0.292553       -0.374935
@@ -73,8 +75,12 @@ def test_roundtrip():
     fd2, path2 = tempfile.mkstemp()
     with open(path, "w") as fp:
         print(example_qdp, file=fp)
-
-    table = read_table_qdp(fp.name, input_colnames=["MJD", "Rate"], table_id=0)
+    with pytest.warns(UserWarning) as record:
+        table = read_table_qdp(fp.name, input_colnames=["MJD", "Rate"],
+                               table_id=0)
+    assert np.any(["This file contains multiple command blocks"
+                   in r.message.args[0]
+                   for r in record])
 
     write_table_qdp(table, path2)
 
@@ -93,7 +99,11 @@ def test_read_write_simple(tmpdir):
     t1 = Table()
     t1.add_column(Column(name='a', data=[1, 2, 3]))
     t1.write(test_file, format='qdp')
-    t2 = Table.read(test_file, table_id=0, format='qdp')
+    with pytest.warns(UserWarning) as record:
+        t2 = Table.read(test_file, format='qdp')
+    assert np.any(["table_id not specified. Reading the first available table"
+                   in r.message.args[0]
+                   for r in record])
     assert np.all(t2['col1'] == t1['a'])
 
 
@@ -101,6 +111,7 @@ def test_read_write_simple_specify_name(tmpdir):
     test_file = str(tmpdir.join('test.qdp'))
     t1 = Table()
     t1.add_column(Column(name='a', data=[1, 2, 3]))
-    t1.write(test_file, format='qdp')
+    # Give a non-None err_specs
+    t1.write(test_file, format='qdp', err_specs={})
     t2 = Table.read(test_file, table_id=0, format='qdp', input_colnames=['a'])
     assert np.all(t2['a'] == t1['a'])

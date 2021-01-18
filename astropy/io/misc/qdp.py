@@ -334,6 +334,14 @@ def understand_err_col(colnames):
     True
     >>> np.allclose(terr, [2])
     True
+    >>> serr, terr = understand_err_col(['a', 'a_nerr'])
+    Traceback (most recent call last):
+    ...
+    ValueError: Missing positive error...
+    >>> serr, terr = understand_err_col(['a', 'a_perr'])
+    Traceback (most recent call last):
+    ...
+    ValueError: Missing negative error...
     """
     shift = 0
     serr = []
@@ -347,10 +355,11 @@ def understand_err_col(colnames):
             shift += 1
         elif col.endswith("_perr"):
             terr.append(i - shift)
-            if not colnames[i + 1].endswith('_nerr'):
+            if len(colnames) == i + 1 or not colnames[i + 1].endswith('_nerr'):
                 raise ValueError("Missing negative error")
             shift += 2
-
+        elif col.endswith("_nerr") and not colnames[i - 1].endswith('_perr'):
+            raise ValueError("Missing positive error")
     return serr, terr
 
 
