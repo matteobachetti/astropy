@@ -122,12 +122,12 @@ def get_type_from_list_of_lines(lines):
     for type_ in types:
         if type_.startswith('data', ):
             ncol = int(type_[5:])
-            if ncol is None:
+            if current_ncol is None:
                 current_ncol = ncol
             elif ncol != current_ncol:
                 raise ValueError('Inconsistent number of columns')
 
-        return types, current_ncol
+    return types, current_ncol
 
 
 def analyze_qdp_file(qdp_file):
