@@ -2,6 +2,7 @@ import copy
 from itertools import groupby
 import numpy as np
 import warnings
+from astropy.utils.exceptions import AstropyUserWarning
 from astropy.table import Table
 from astropy.io import registry as io_registry
 
@@ -290,7 +291,8 @@ def get_tables_from_qdp_file(qdp_file, input_colnames=None):
         elif key == "command":
             if err_specs != {}:
                 warnings.warn(
-                    "This file contains multiple command blocks. Please verify"
+                    "This file contains multiple command blocks. Please verify",
+                    AstropyUserWarning
                 )
 
             for line in lines[file_line : file_line + n_lines]:
@@ -384,7 +386,8 @@ def read_table_qdp(qdp_file, input_colnames=None, table_id=None):
         List containing all the tables present inside the QDP file
     """
     if table_id is None:
-        warnings.warn("table_id not specified. Reading the first available table")
+        warnings.warn("table_id not specified. Reading the first available "
+                      "table", AstropyUserWarning)
         table_id = 0
 
     tables = get_tables_from_qdp_file(qdp_file, input_colnames=input_colnames)

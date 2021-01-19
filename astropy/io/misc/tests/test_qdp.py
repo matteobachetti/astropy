@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 from astropy.io.misc.qdp import read_table_qdp, write_table_qdp
 from astropy.table import Table, Column
+from astropy.utils.exceptions import AstropyUserWarning
 
 
 def test_get_tables_from_qdp_file():
@@ -75,7 +76,7 @@ def test_roundtrip():
     fd2, path2 = tempfile.mkstemp()
     with open(path, "w") as fp:
         print(example_qdp, file=fp)
-    with pytest.warns(UserWarning) as record:
+    with pytest.warns(AstropyUserWarning) as record:
         table = read_table_qdp(fp.name, input_colnames=["MJD", "Rate"],
                                table_id=0)
     assert np.any(["This file contains multiple command blocks"
@@ -86,9 +87,14 @@ def test_roundtrip():
 
     new_table = read_table_qdp(path2, input_colnames=["MJD", "Rate"], table_id=0)
 
-    assert np.allclose(new_table['MJD'], table['MJD'])
-    assert np.isnan(table['Rate'][0])
-    assert np.isnan(new_table['Rate'][0])
+    for col in new_table.colnames:
+        is_nan = np.array([np.isnan(val) for val in new_table[col]])
+        # All non-NaN values are the same
+        assert np.allclose(new_table[col][~is_nan], table[col][~is_nan])
+        if np.any(is_nan):
+            # All NaN values are read as such.
+            assert np.isnan(table[col][is_nan])
+    assert np.allclose(new_table['MJD_perr'], [2.378472e-05, 1.1446759e-05])
 
     for meta_name in ['initial_comments', 'comments']:
         assert meta_name in new_table.meta
