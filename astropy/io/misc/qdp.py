@@ -82,17 +82,17 @@ def line_type(line):
     raise ValueError(f"Unrecognized QDP line: {line}")
 
 
-def get_type_from_list_of_lines(list_of_lines):
+def get_type_from_list_of_lines(lines):
     """Read through the list of QDP file lines and label each line by type
 
     Parameters
     ----------
-    list_of_lines : List
+    lines : list
         List containing one file line in each entry
 
     Returns
     -------
-    contents : List
+    contents : list
         List containing the type for each line (see `line_type_and_data`)
     ncol : int
         The number of columns in the data lines. Must be the same throughout
@@ -102,35 +102,32 @@ def get_type_from_list_of_lines(list_of_lines):
     --------
     >>> line0 = "! A comment"
     >>> line1 = "543 12 456.0"
-    >>> list_of_lines = [line0, line1]
-    >>> types, ncol = get_type_from_list_of_lines(list_of_lines)
+    >>> lines = [line0, line1]
+    >>> types, ncol = get_type_from_list_of_lines(lines)
     >>> types[0]
     'comment'
     >>> types[1]
     'data,3'
     >>> ncol
     3
-    >>> list_of_lines.append("23")
-    >>> get_type_from_list_of_lines(list_of_lines)
+    >>> lines.append("23")
+    >>> get_type_from_list_of_lines(lines)
     Traceback (most recent call last):
         ...
     ValueError: Inconsistent number of columns
     """
-    contents = []
 
-    for line in list_of_lines:
-        contents.append(line_type(line))
+    types = [line_type(line) for line in lines]
+    current_ncol = None
+    for type_ in types:
+        if type_.startswith('data', ):
+            ncol = int(type_[5:])
+            if ncol is None:
+                current_ncol = ncol
+            elif ncol != current_ncol:
+                raise ValueError('Inconsistent number of columns')
 
-    all_data_specs = [c for c in contents if c.startswith("data")]
-
-    # Verify that all data specs are the same (i.e. all data lines
-    # contain the same number of entries)
-    if len(list(set(all_data_specs))) != 1:
-        raise ValueError("Inconsistent number of columns")
-
-    ncol = int(all_data_specs[0].replace("data,", "").strip())
-
-    return contents, ncol
+        return types, current_ncol
 
 
 def analyze_qdp_file(qdp_file):
@@ -143,16 +140,16 @@ def analyze_qdp_file(qdp_file):
 
     Returns
     -------
-    contents : List
+    contents : list
         List containing the type for each line (see `line_type_and_data`)
     ncol : int
         The number of columns in the data lines. Must be the same throughout
         the file
     """
     with open(qdp_file) as fobj:
-        list_of_lines = list(fobj.readlines())
+        lines = fobj.readlines()
 
-    return get_type_from_list_of_lines(list_of_lines)
+    return get_type_from_list_of_lines(lines)
 
 
 def interpret_err_lines(err_specs, ncols, input_colnames=None):
@@ -167,13 +164,13 @@ def interpret_err_lines(err_specs, ncols, input_colnames=None):
 
     Other parameters
     ----------------
-    input_colnames : List of strings
+    input_colnames : list of strings
         Name of data columns (defaults to ['col1', 'col2', ...]), _not_
         including error columns.
 
     Returns
     -------
-    colnames : List
+    colnames : list
         List containing the column names. Error columns will have the name
         of the main column plus ``_err`` for symmetric errors, and ``_perr``
         and ``_nerr`` for positive and negative errors respectively
@@ -253,20 +250,20 @@ def get_tables_from_qdp_file(qdp_file, input_colnames=None):
 
     Other parameters
     ----------------
-    input_colnames : List of strings
+    input_colnames : list of strings
         Name of data columns (defaults to ['col1', 'col2', ...]), _not_
         including error columns.
 
     Returns
     -------
-    tables : List of `Table` objects
+    tables : list of `Table` objects
         List containing all the tables present inside the QDP file
     """
 
     contents, ncol = analyze_qdp_file(qdp_file)
 
     with open(qdp_file) as fobj:
-        lines = list(fobj.readlines())
+        lines = fobj.readlines()
 
     file_line = 0
     table_list = []
@@ -377,13 +374,13 @@ def read_table_qdp(qdp_file, input_colnames=None, table_id=None):
         Number of the table to be read from the QDP file. This is useful
         when multiple tables present in the file. By default, the first is read.
 
-    input_colnames : List of strings
+    input_colnames : list of strings
         Name of data columns (defaults to ['col1', 'col2', ...]), _not_
         including error columns.
 
     Returns
     -------
-    tables : List of `Table` objects
+    tables : list of `Table` objects
         List containing all the tables present inside the QDP file
     """
     if table_id is None:
