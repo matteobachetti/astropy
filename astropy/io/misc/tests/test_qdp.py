@@ -88,7 +88,13 @@ def test_roundtrip():
     new_table = read_table_qdp(path2, input_colnames=["MJD", "Rate"], table_id=0)
 
     for col in new_table.colnames:
-        is_nan = np.array([np.isnan(val) for val in new_table[col]])
+        is_masked = np.array([np.ma.is_masked(val) for val in new_table[col]])
+        if np.any(is_masked):
+            # All NaN values are read as such.
+            assert np.ma.is_masked(table[col][is_masked])
+
+        is_nan = np.array([(not np.ma.is_masked(val) and np.isnan(val))
+                           for val in new_table[col]])
         # All non-NaN values are the same
         assert np.allclose(new_table[col][~is_nan], table[col][~is_nan])
         if np.any(is_nan):

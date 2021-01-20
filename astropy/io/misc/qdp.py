@@ -239,6 +239,86 @@ def interpret_err_lines(err_specs, ncols, input_colnames=None):
     return colnames
 
 
+# def get_tables_from_qdp_file(qdp_file, input_colnames=None):
+#     """Get all tables from a QDP file
+#
+#     Parameters
+#     ----------
+#     qdp_file : str
+#         Input QDP file name
+#
+#     Other parameters
+#     ----------------
+#     input_colnames : list of strings
+#         Name of data columns (defaults to ['col1', 'col2', ...]), _not_
+#         including error columns.
+#
+#     Returns
+#     -------
+#     tables : list of `Table` objects
+#         List containing all the tables present inside the QDP file
+#     """
+#
+#     contents, ncol = analyze_qdp_file(qdp_file)
+#
+#     with open(qdp_file) as fobj:
+#         lines = fobj.readlines()
+#
+#     file_line = 0
+#     table_list = []
+#     initial_comments = ""
+#     comment_text = ""
+#     err_specs = {}
+#     colnames = None
+#     if input_colnames is None or len(input_colnames) == ncol:
+#         colnames = interpret_err_lines(
+#             err_specs, ncol, input_colnames=input_colnames
+#         )
+#
+#     for key, group in groupby(contents):
+#         n_lines = len(list(group))
+#
+#         if key == "comment":
+#             comment_text = ""
+#             for line in lines[file_line : file_line + n_lines]:
+#                 comment_text += line.strip().lstrip("! ") + "\n"
+#
+#             if file_line == 0:
+#                 initial_comments = comment_text
+#
+#         elif key == "command":
+#             if err_specs != {}:
+#                 warnings.warn(
+#                     "This file contains multiple command blocks. Please verify",
+#                     AstropyUserWarning
+#                 )
+#
+#             for line in lines[file_line : file_line + n_lines]:
+#                 command = line.strip().split()
+#                 err_specs[command[1].lower()] = [int(c) for c in command[2:]]
+#             colnames = interpret_err_lines(
+#                 err_specs, ncol, input_colnames=input_colnames
+#             )
+#
+#         elif key.startswith("data"):
+#             data_rows = []
+#             for line in lines[file_line : file_line + n_lines]:
+#                 values = []
+#                 for v in line.split():
+#                     if v == "NO":
+#                         values.append(np.nan)
+#                     else:
+#                         values.append(float(v))
+#
+#                 data_rows.append(values)
+#             new_table = Table(rows=data_rows, names=colnames)
+#             new_table.meta["initial_comments"] = initial_comments
+#             new_table.meta["comments"] = comment_text
+#             table_list.append(new_table)
+#
+#         file_line += n_lines
+#     return table_list
+
 def get_tables_from_qdp_file(qdp_file, input_colnames=None):
     """Get all tables from a QDP file
 
@@ -264,61 +344,82 @@ def get_tables_from_qdp_file(qdp_file, input_colnames=None):
     with open(qdp_file) as fobj:
         lines = fobj.readlines()
 
-    file_line = 0
     table_list = []
-    initial_comments = ""
-    comment_text = ""
     err_specs = {}
     colnames = None
-    if input_colnames is None or len(input_colnames) == ncol:
-        colnames = interpret_err_lines(
-            err_specs, ncol, input_colnames=input_colnames
-        )
 
-    for key, group in groupby(contents):
-        n_lines = len(list(group))
+    comment_text = ""
+    initial_comments = ""
+    command_lines = ""
+    current_rows = None
 
-        if key == "comment":
-            comment_text = ""
-            for line in lines[file_line : file_line + n_lines]:
-                comment_text += line.strip().lstrip("! ") + "\n"
+    for line, datatype in zip(lines, contents):
+        line = line.strip().lstrip('!')
+        # Is this a comment?
+        if datatype == "comment":
+            comment_text += line + '\n'
+            continue
 
-            if file_line == 0:
+        if datatype == "command":
+            # The first time I find commands, I save whatever comments into
+            # The initial comments.
+            if command_lines == "":
                 initial_comments = comment_text
+                comment_text = ""
 
-        elif key == "command":
             if err_specs != {}:
                 warnings.warn(
                     "This file contains multiple command blocks. Please verify",
                     AstropyUserWarning
                 )
+            command_lines += line + '\n'
+            continue
 
-            for line in lines[file_line : file_line + n_lines]:
-                command = line.strip().split()
-                err_specs[command[1].lower()] = [int(c) for c in command[2:]]
-            colnames = interpret_err_lines(
-                err_specs, ncol, input_colnames=input_colnames
-            )
+        if datatype.startswith("data"):
+            # The first time I find data, I define err_specs
+            if err_specs == {} and command_lines != "":
+                for cline in command_lines.strip().split('\n'):
+                    command = cline.strip().split()
+                    if len(command) < 3:
+                        continue
+                    err_specs[command[1].lower()] = [int(c) for c in
+                                                     command[2:]]
+            if colnames is None:
+                colnames = interpret_err_lines(
+                    err_specs, ncol, input_colnames=input_colnames
+                )
 
-        elif key.startswith("data"):
-            data_rows = []
-            for line in lines[file_line : file_line + n_lines]:
-                values = []
-                for v in line.split():
-                    if v == "NO":
-                        values.append(np.nan)
-                    else:
-                        values.append(float(v))
+            if current_rows is None:
+                current_rows = []
 
-                data_rows.append(values)
-            new_table = Table(rows=data_rows, names=colnames)
-            new_table.meta["initial_comments"] = initial_comments
-            new_table.meta["comments"] = comment_text
-            table_list.append(new_table)
+            values = []
+            for v in line.split():
+                if v == "NO":
+                    values.append(np.ma.masked)
+                else:
+                    values.append(float(v))
+            current_rows.append(values)
+            continue
+        if datatype == "new":
+            # Save table to table_list and reset
+            if current_rows is not None:
+                new_table = Table(names=colnames, rows=current_rows)
+                new_table.meta["initial_comments"] = initial_comments.strip()
+                new_table.meta["comments"] = comment_text.strip()
+                # Reset comments
+                comment_text = ""
+                table_list.append(new_table)
+                current_rows = None
+            continue
+    # At the very end, if there is still a table being written, let's save
+    # it to the table_list
+    if current_rows is not None:
+        new_table = Table(names=colnames, rows=current_rows)
+        new_table.meta["initial_comments"] = initial_comments.strip()
+        new_table.meta["comments"] = comment_text.strip()
+        table_list.append(new_table)
 
-        file_line += n_lines
     return table_list
-
 
 def understand_err_col(colnames):
     """Get which column names are error columns
@@ -389,6 +490,7 @@ def read_table_qdp(qdp_file, input_colnames=None, table_id=None):
         table_id = 0
 
     tables = get_tables_from_qdp_file(qdp_file, input_colnames=input_colnames)
+
     return tables[table_id]
 
 
@@ -440,7 +542,14 @@ def write_table_qdp(table, filename, err_specs=None):
         colnames = table.colnames
         print("!" + " ".join(colnames), file=fobj)
         for row in table:
-            print(" ".join([str(val) for val in row]), file=fobj)
+            values = []
+            for val in row:
+                if not np.ma.is_masked(val):
+                    rep = str(val)
+                else:
+                    rep = "NO"
+                values.append(rep)
+            print(" ".join(values), file=fobj)
 
 
 def register_qdp():
