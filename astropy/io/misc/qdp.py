@@ -4,6 +4,7 @@ This package contains functions for reading and writing QDP tables that are
 not meant to be used directly, but instead are available as readers/writers in
 `astropy.table`. See :ref:`table_io` for more details.
 """
+import re
 import copy
 from itertools import groupby
 import numpy as np
@@ -18,10 +19,12 @@ def is_qdp(origin, filepath, fileobj, *args, **kwargs):
         return filepath.endswith(('.qdp'))
     return False
 
+_decimal_re = r'[+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?'
+_command_re = r'READ [TS]ERR(\s+[0-9]+)+'
+_new_re = r'NO(\s+NO)+'
+_data_re = rf'({_decimal_re}|NO|[-+]?nan)(\s+({_decimal_re}|NO|[-+]?nan))*)'
+_line_type_re = re.compile(rf'^\s*((?P<command>{_command_re})|(?P<new>{_new_re})|(?P<data>{_data_re})?\s*(\!(?P<comment>.*))?\s*$')
 
-import re
-_decimal_re = r'[+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?'  # YMMV depending on the file format
-_line_type_re = re.compile(rf'^\s*((?P<command>READ [TS]ERR(\s+[0-9]+)+)|(?P<new>NO(\s+NO)+)|(?P<data>({_decimal_re}|NO|[-+]?nan)(\s+({_decimal_re}|NO|[-+]?nan))*))?\s*(\!(?P<comment>.*))?\s*$')
 
 def line_type(line):
     """Interpret a QDP file line
@@ -46,8 +49,8 @@ def line_type(line):
     'comment'
     >>> line_type(" 21345.45")
     'data,1'
-    >>> line_type(" 21345.45 NO")
-    'data,2'
+    >>> line_type(" 21345.45 1.53e-3 1e-3 .04 NO nan")
+    'data,6'
     >>> line_type(" 21345.45 ! a comment to disturb")
     'data,1'
     >>> line_type("NO NO NO NO NO")
