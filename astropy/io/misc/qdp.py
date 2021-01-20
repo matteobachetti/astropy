@@ -239,86 +239,6 @@ def interpret_err_lines(err_specs, ncols, input_colnames=None):
     return colnames
 
 
-# def get_tables_from_qdp_file(qdp_file, input_colnames=None):
-#     """Get all tables from a QDP file
-#
-#     Parameters
-#     ----------
-#     qdp_file : str
-#         Input QDP file name
-#
-#     Other parameters
-#     ----------------
-#     input_colnames : list of strings
-#         Name of data columns (defaults to ['col1', 'col2', ...]), _not_
-#         including error columns.
-#
-#     Returns
-#     -------
-#     tables : list of `Table` objects
-#         List containing all the tables present inside the QDP file
-#     """
-#
-#     contents, ncol = analyze_qdp_file(qdp_file)
-#
-#     with open(qdp_file) as fobj:
-#         lines = fobj.readlines()
-#
-#     file_line = 0
-#     table_list = []
-#     initial_comments = ""
-#     comment_text = ""
-#     err_specs = {}
-#     colnames = None
-#     if input_colnames is None or len(input_colnames) == ncol:
-#         colnames = interpret_err_lines(
-#             err_specs, ncol, input_colnames=input_colnames
-#         )
-#
-#     for key, group in groupby(contents):
-#         n_lines = len(list(group))
-#
-#         if key == "comment":
-#             comment_text = ""
-#             for line in lines[file_line : file_line + n_lines]:
-#                 comment_text += line.strip().lstrip("! ") + "\n"
-#
-#             if file_line == 0:
-#                 initial_comments = comment_text
-#
-#         elif key == "command":
-#             if err_specs != {}:
-#                 warnings.warn(
-#                     "This file contains multiple command blocks. Please verify",
-#                     AstropyUserWarning
-#                 )
-#
-#             for line in lines[file_line : file_line + n_lines]:
-#                 command = line.strip().split()
-#                 err_specs[command[1].lower()] = [int(c) for c in command[2:]]
-#             colnames = interpret_err_lines(
-#                 err_specs, ncol, input_colnames=input_colnames
-#             )
-#
-#         elif key.startswith("data"):
-#             data_rows = []
-#             for line in lines[file_line : file_line + n_lines]:
-#                 values = []
-#                 for v in line.split():
-#                     if v == "NO":
-#                         values.append(np.nan)
-#                     else:
-#                         values.append(float(v))
-#
-#                 data_rows.append(values)
-#             new_table = Table(rows=data_rows, names=colnames)
-#             new_table.meta["initial_comments"] = initial_comments
-#             new_table.meta["comments"] = comment_text
-#             table_list.append(new_table)
-#
-#         file_line += n_lines
-#     return table_list
-
 def get_tables_from_qdp_file(qdp_file, input_colnames=None):
     """Get all tables from a QDP file
 
@@ -420,6 +340,7 @@ def get_tables_from_qdp_file(qdp_file, input_colnames=None):
         table_list.append(new_table)
 
     return table_list
+
 
 def understand_err_col(colnames):
     """Get which column names are error columns
