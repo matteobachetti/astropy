@@ -19,6 +19,10 @@ def is_qdp(origin, filepath, fileobj, *args, **kwargs):
     return False
 
 
+import re
+_decimal_re = r'[+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?'  # YMMV depending on the file format
+_line_type_re = re.compile(rf'^\s*((?P<command>READ [TS]ERR(\s+[0-9]+)+)|(?P<new>NO(\s+NO)+)|(?P<data>({_decimal_re}|NO|[-+]?nan)(\s+({_decimal_re}|NO|[-+]?nan))*))?\s*(\!(?P<comment>.*))?\s*$')
+
 def line_type(line):
     """Interpret a QDP file line
 
@@ -48,46 +52,29 @@ def line_type(line):
     'data,1'
     >>> line_type("NO NO NO NO NO")
     'new'
+    >>> line_type("N O N NOON OON O")
+    Traceback (most recent call last):
+        ...
+    ValueError: Unrecognized QDP line...
     >>> line_type(" some non-comment gibberish")
     Traceback (most recent call last):
         ...
     ValueError: Unrecognized QDP line...
     """
     line = line.strip()
-    if line == "":
-        return "comment"
+    if not line:
+        return 'comment'
+    match = _line_type_re.match(line)
+    if match is None:
+        raise ValueError(f'Unrecognized QDP line: {line}')
+    for type_, val in match.groupdict().items():
+        if val is None:
+            continue
 
-    # Look for in-line comments (In lines containing other data or commands,
-    # not starting with those comments)
-    comment_in_line = line.find("!")
-    if comment_in_line > 1:
-        line = line[:comment_in_line]
-
-    probe = line.split()[0]
-    n = len(line.split())
-
-    if probe.startswith("!"):
-        return "comment"
-
-    # Full line of NOs -> new table
-    if probe.strip("NO ") == "":
-        return "new"
-
-    # A single NO here and there: missing data!
-    if probe == "NO":
-        return f"data,{n}"
-
-    if probe == "READ":
-        return "command"
-
-    try:
-        float(probe)
-        return f"data,{n}"
-    except ValueError:
-        pass
-
-    raise ValueError(f"Unrecognized QDP line: {line}")
-
+        if type_ == 'data':
+            return f'data,{len(val.split())}'
+        else:
+            return type_
 
 def get_type_from_list_of_lines(lines):
     """Read through the list of QDP file lines and label each line by type
