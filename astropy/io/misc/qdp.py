@@ -19,6 +19,7 @@ def is_qdp(origin, filepath, fileobj, *args, **kwargs):
         return filepath.endswith(('.qdp'))
     return False
 
+
 _decimal_re = r'[+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?'
 _command_re = r'READ [TS]ERR(\s+[0-9]+)+'
 _new_re = r'NO(\s+NO)+'
@@ -78,6 +79,7 @@ def line_type(line):
             return f'data,{len(val.split())}'
         else:
             return type_
+
 
 def get_type_from_list_of_lines(lines):
     """Read through the list of QDP file lines and label each line by type
