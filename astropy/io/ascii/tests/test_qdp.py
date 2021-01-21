@@ -1,13 +1,11 @@
 import numpy as np
 import pytest
-from astropy.io.misc.qdp import read_table_qdp, write_table_qdp
+from astropy.io.ascii.qdp import read_table_qdp, write_table_qdp
 from astropy.table import Table, Column
 from astropy.utils.exceptions import AstropyUserWarning
 
 
 def test_get_tables_from_qdp_file(tmpdir):
-    import tempfile
-
     example_qdp = """
     ! Swift/XRT hardness ratio of trigger: XXXX, name: BUBU X-2
     ! Columns are as labelled
@@ -44,8 +42,6 @@ def test_get_tables_from_qdp_file(tmpdir):
 
 
 def test_roundtrip(tmpdir):
-    import tempfile
-
     example_qdp = """
     ! Swift/XRT hardness ratio of trigger: XXXX, name: BUBU X-2
     ! Columns are as labelled

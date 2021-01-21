@@ -13,6 +13,8 @@ from astropy.utils.exceptions import AstropyUserWarning
 from astropy.table import Table
 from astropy.io import registry as io_registry
 
+from . import core, basic
+
 
 def is_qdp(origin, filepath, fileobj, *args, **kwargs):
     if filepath is not None:
@@ -471,6 +473,62 @@ def write_table_qdp(table, filename, err_specs=None):
                     rep = "NO"
                 values.append(rep)
             print(" ".join(values), file=fobj)
+
+
+class QDPSplitter(core.DefaultSplitter):
+    """
+    Split on comma for QDP tables
+    """
+    delimiter = '\s+'
+
+
+class QDPHeader(basic.BasicHeader):
+    """
+    Header that uses the :class:`astropy.io.ascii.basic.QDPSplitter`
+    """
+    splitter_class = QDPSplitter
+    comment = None
+    write_comment = None
+
+
+class QDPData(basic.BasicData):
+    """
+    Data that uses the :class:`astropy.io.ascii.basic.CsvSplitter`
+    """
+    splitter_class = QDPSplitter
+    fill_values = [(core.masked, '')]
+    comment = None
+    write_comment = None
+
+
+class QDP(basic.Basic):
+    """QDP table.
+
+    This file format can contain multiple tables, separated by a line full
+    of ``NO``s. Comments are exclamation marks, and missing values are single
+    ``NO`` entries.
+    Headers are just comments, and tables distributed by various missions
+    can differ greatly in their use of conventions. For examples, light curves
+    distributed by the Swift-Gehrels mission have an extra space in one header
+    entry that makes the number of  inconsistent with the number of columns
+
+    ..
+                      Extra space
+                          |
+                          v
+       !     MJD       Err (pos)       Err(neg)        Rate            Error
+        53000.123456   2.378e-05     -2.378472e-05     NO             0.212439
+
+
+    """
+    _format_name = 'qdp'
+    _io_registry_format_aliases = ['qdp']
+    _io_registry_can_write = True
+    _io_registry_suffix = '.qdp'
+    _description = 'Quick and Dandy Plotter'
+
+    header_class = QDPHeader
+    data_class = QDPData
 
 
 def register_qdp():
