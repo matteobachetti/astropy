@@ -5,7 +5,7 @@ from astropy.table import Table, Column
 from astropy.utils.exceptions import AstropyUserWarning
 
 
-def test_get_tables_from_qdp_file():
+def test_get_tables_from_qdp_file(tmpdir):
     import tempfile
 
     example_qdp = """
@@ -29,7 +29,8 @@ def test_get_tables_from_qdp_file():
     55045.099887 1.14467592592593e-05    -1.14467592592593e-05   0.000000        -nan
     """
 
-    fd, path = tempfile.mkstemp()
+    path = str(tmpdir.join('test.qdp'))
+
     with open(path, "w") as fp:
         print(example_qdp, file=fp)
 
@@ -42,7 +43,7 @@ def test_get_tables_from_qdp_file():
     assert np.isclose(table2["MJD_nerr"][0], -2.37847222222222e-05)
 
 
-def test_roundtrip():
+def test_roundtrip(tmpdir):
     import tempfile
 
     example_qdp = """
@@ -72,8 +73,9 @@ def test_roundtrip():
     NO 1.14467592592593e-05    -1.14467592592593e-05   0.000000        NO
     """
 
-    fd, path = tempfile.mkstemp()
-    fd2, path2 = tempfile.mkstemp()
+    path = str(tmpdir.join('test.qdp'))
+    path2 = str(tmpdir.join('test2.qdp'))
+
     with open(path, "w") as fp:
         print(example_qdp, file=fp)
     with pytest.warns(AstropyUserWarning) as record:
