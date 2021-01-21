@@ -202,13 +202,13 @@ ascii.fixed_width_no_header    Yes          :class:`~astropy.io.ascii.FixedWidth
                  ascii.ipac    Yes          :class:`~astropy.io.ascii.Ipac`: IPAC format table
                 ascii.latex    Yes    .tex  :class:`~astropy.io.ascii.Latex`: LaTeX table
             ascii.no_header    Yes          :class:`~astropy.io.ascii.NoHeader`: Basic table with no headers
+                  ascii.qdp    Yes    .qdp   QDP_: Quick and Dandy Plotter files
                   ascii.rdb    Yes    .rdb  :class:`~astropy.io.ascii.Rdb`: Tab-separated with a type definition header line
                   ascii.rst    Yes    .rst  :class:`~astropy.io.ascii.RST`: reStructuredText simple format table
            ascii.sextractor     No          :class:`~astropy.io.ascii.SExtractor`: SExtractor format table
                   ascii.tab    Yes          :class:`~astropy.io.ascii.Tab`: Basic table with tab-separated values
                        fits    Yes    auto  :mod:`~astropy.io.fits`: Flexible Image Transport System file
                        hdf5    Yes    auto  HDF5_: Hierarchical Data Format binary file
-                       qdp     Yes    qdp   QDP_:
                  pandas.csv    Yes          Wrapper around ``pandas.read_csv()`` and ``pandas.to_csv()``
                  pandas.fwf     No          Wrapper around ``pandas.read_fwf()`` (fixed width format)
                 pandas.html    Yes          Wrapper around ``pandas.read_html()`` and ``pandas.to_html()``
@@ -915,7 +915,7 @@ By default, ``serialize_method`` for Time columns is equal to
 QDP
 ---
 
-.. _QDP:https://heasarc.gsfc.nasa.gov/ftools/others/qdp/qdp.html
+.. _QDP: https://heasarc.gsfc.nasa.gov/ftools/others/qdp/qdp.html
 
 By specifying ``format='qdp'``, data can be saved in the simple QDP_ format used for plotting with PLT.
 This format is still used by many NASA missions, for example to distribute lightcurves from the Swift mission.
