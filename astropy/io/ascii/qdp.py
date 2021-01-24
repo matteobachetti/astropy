@@ -479,7 +479,7 @@ class QDPSplitter(core.DefaultSplitter):
     """
     Split on comma for QDP tables
     """
-    delimiter = '\s+'
+    delimiter = ' '
 
 
 class QDPHeader(basic.BasicHeader):
